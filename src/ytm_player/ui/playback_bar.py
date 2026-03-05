@@ -1,4 +1,4 @@
-"""Always-visible playback status bar and interactive footer."""
+"""the playback bar and footer you always see."""
 
 from __future__ import annotations
 
@@ -20,26 +20,26 @@ from ytm_player.utils.formatting import extract_artist, truncate
 
 logger = logging.getLogger(__name__)
 
-# Playback state symbols.
-_ICON_PLAYING = "\u25b6"  # Black right-pointing triangle
-_ICON_PAUSED = "\u23f8"  # Double vertical bar
-_ICON_STOPPED = "\u25a0"  # Black square
+# icons for playback
+_ICON_PLAYING = "\u25b6"
+_ICON_PAUSED = "\u23f8"
+_ICON_STOPPED = "\u25a0"
 
-_ICON_VOLUME = "\U0001f50a"  # Speaker high volume
+_ICON_VOLUME = "\U0001f50a"
 
-_ICON_REPEAT_OFF = "\U0001f501"  # Repeat button
-_ICON_REPEAT_ALL = "\U0001f501"  # Same icon, coloured differently
-_ICON_REPEAT_ONE = "\U0001f502"  # Repeat single button
+_ICON_REPEAT_OFF = "\U0001f501"
+_ICON_REPEAT_ALL = "\U0001f501"
+_ICON_REPEAT_ONE = "\U0001f502"
 
-_ICON_SHUFFLE_OFF = "\U0001f500"  # Twisted arrows
-_ICON_SHUFFLE_ON = "\U0001f500"  # Same, coloured differently
+_ICON_SHUFFLE_OFF = "\U0001f500"
+_ICON_SHUFFLE_ON = "\U0001f500"
 
 
-# ── Track info widget ─────────────────────────────────────────────
+# --- track info widget ---
 
 
 class _TrackInfo(Widget):
-    """Displays the current track title, artist, and album on a single line."""
+    """shows the title, artist, and album in one line"""
 
     DEFAULT_CSS = """
     _TrackInfo {
@@ -58,7 +58,7 @@ class _TrackInfo(Widget):
         theme = get_theme()
         result = Text()
 
-        # State icon
+        # the play/pause icon
         if self.is_playing and not self.is_paused:
             result.append(f" {_ICON_PLAYING} ", style=f"bold {theme.primary}")
         elif self.is_paused:
@@ -72,9 +72,7 @@ class _TrackInfo(Widget):
             artist_w = min(len(self.artist), max_w // 3)
             album_w = max_w - title_w - artist_w - 8
 
-            # LRI (U+2066) ... PDI (U+2069) isolates the track info so
-            # RTL titles don't pull adjacent widgets (volume, etc.) into
-            # the RTL BiDi context.
+            # isolate track info for right-to-left text
             result.append("\u2066")
             result.append(truncate(self.title, title_w), style=f"bold {theme.foreground}")
             if self.artist:
@@ -82,7 +80,7 @@ class _TrackInfo(Widget):
                 result.append(truncate(self.artist, artist_w), style=theme.secondary)
             if self.album:
                 result.append(" \u2014 ", style=theme.muted_text)
-                result.append(truncate(self.album, max(0, album_w)), style=theme.muted_text)
+                result.append(truncate(str(self.album or ""), max(0, album_w)), style=theme.muted_text)
             result.append("\u2069")
         else:
             result.append("No track playing", style=theme.muted_text)
@@ -90,11 +88,11 @@ class _TrackInfo(Widget):
         return result
 
 
-# ── Interactive control widgets ───────────────────────────────────
+# --- control widgets ---
 
 
 class _VolumeDisplay(Widget):
-    """Volume display — scroll to change volume."""
+    """shows volume, scroll to change it"""
 
     DEFAULT_CSS = """
     _VolumeDisplay {
@@ -123,7 +121,7 @@ class _VolumeDisplay(Widget):
 
 
 class _RepeatButton(Widget):
-    """Clickable repeat mode indicator."""
+    """click to change repeat mode"""
 
     DEFAULT_CSS = """
     _RepeatButton {
@@ -161,7 +159,7 @@ class _RepeatButton(Widget):
 
 
 class _ShuffleButton(Widget):
-    """Clickable shuffle indicator."""
+    """click to toggle shuffle"""
 
     DEFAULT_CSS = """
     _ShuffleButton {
@@ -198,19 +196,14 @@ class _ShuffleButton(Widget):
                 logger.debug("Failed to update shuffle state display on click", exc_info=True)
 
 
-# ── Main playback bar ─────────────────────────────────────────────
+# --- the main playback bar ---
 
 
 class PlaybackBar(Widget):
-    """Persistent playback bar showing track info, progress, and controls.
-
-    Layout (2 lines + optional album art):
-        Line 1: [art] > Song Title -- Artist Name -- Album       vol  repeat  shuffle
-        Line 2: [art]  1:23 [===========>---------] 4:56
-    """
+    """the bar at the bottom with track info and progress"""
 
     class TrackRightClicked(Message):
-        """Emitted when the playback bar area is right-clicked."""
+        """when you right-click the bar"""
 
         def __init__(self, track: dict) -> None:
             super().__init__()
@@ -272,7 +265,7 @@ class PlaybackBar(Widget):
                     )
 
     def on_click(self, event: Click) -> None:
-        """Right-click on the playback bar opens track actions."""
+        """right-clicking opens the menu"""
         if event.button != 3:
             return
         app = self.app
@@ -284,10 +277,10 @@ class PlaybackBar(Widget):
         if track:
             self.post_message(self.TrackRightClicked(track))
 
-    # ── Public update methods ────────────────────────────────────────
+    # --- update methods ---
 
     def update_track(self, track: dict | None) -> None:
-        """Update displayed track information."""
+        """update the track info"""
         info = self.query_one("#pb-track-info", _TrackInfo)
         art = self.query_one("#pb-art", AlbumArt)
 
@@ -302,41 +295,41 @@ class PlaybackBar(Widget):
 
         info.title = track.get("title", "")
         info.artist = extract_artist(track)
-        info.album = track.get("album") or ""
+        info.album = str(track.get("album") or "")
         art.set_track(track.get("thumbnail_url", ""))
 
     def update_playback_state(self, *, is_playing: bool, is_paused: bool) -> None:
-        """Update play/pause state indicators."""
+        """update play/pause icons"""
         info = self.query_one("#pb-track-info", _TrackInfo)
         info.is_playing = is_playing
         info.is_paused = is_paused
 
     def update_position(self, position: float, duration: float | None = None) -> None:
-        """Update the progress bar position."""
+        """update where we are in the song"""
         progress = self.query_one("#pb-progress", PlaybackProgress)
         progress.update_position(position, duration)
 
     def update_volume(self, volume: int) -> None:
-        """Update the volume display."""
+        """update the volume number"""
         vol = self.query_one("#pb-volume", _VolumeDisplay)
         vol.volume = volume
 
     def update_repeat(self, mode: RepeatMode) -> None:
-        """Update the repeat mode display."""
+        """update the repeat icon"""
         rep = self.query_one("#pb-repeat", _RepeatButton)
         rep.repeat_mode = mode.value
 
     def update_shuffle(self, enabled: bool) -> None:
-        """Update the shuffle state display."""
+        """update the shuffle icon"""
         shuf = self.query_one("#pb-shuffle", _ShuffleButton)
         shuf.shuffle_on = enabled
 
 
-# ── Interactive footer bar ────────────────────────────────────────
+# --- the footer bar ---
 
 
 class _FooterButton(Widget):
-    """A clickable footer button."""
+    """a simple footer button"""
 
     DEFAULT_CSS = """
     _FooterButton {
@@ -393,7 +386,7 @@ class _FooterButton(Widget):
 
 
 class FooterBar(Widget):
-    """Interactive footer with clickable navigation items."""
+    """the footer with all the links"""
 
     DEFAULT_CSS = """
     FooterBar {
@@ -410,7 +403,7 @@ class FooterBar(Widget):
     }
     """
 
-    # Page actions that get an active-page highlight.
+    # nav links
     _PAGE_ACTIONS = {
         "library",
         "search",
@@ -430,13 +423,13 @@ class FooterBar(Widget):
             yield _FooterButton("Search", "search", id="footer-search")
             yield _FooterButton("Browse", "browse", id="footer-browse")
             yield _FooterButton("Queue", "queue", id="footer-queue")
-            # Spotify import.
+            # spotify stuff
             yield _FooterButton("Import", "spotify_import")
-            # Help pushed to far right.
+            # help button
             yield _FooterButton("?", "help", id="footer-help")
 
     def set_active_page(self, page_name: str) -> None:
-        """Highlight the footer button corresponding to the active page."""
+        """highlight whichever page we're on"""
         for action in self._PAGE_ACTIONS:
             try:
                 btn = self.query_one(f"#footer-{action}", _FooterButton)
