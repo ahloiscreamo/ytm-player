@@ -568,8 +568,6 @@ MIT — see [LICENSE](LICENSE).
 - Fixed mpv DLL not found on Windows when installed via scoop/chocolatey — auto-locates `libmpv-2.dll` in common install directories
 - Improved error messages for service init failures
 
----
-
 ### v1.3.4 (2026-03-05)
 
 **Windows Compatibility**
@@ -582,23 +580,17 @@ MIT — see [LICENSE](LICENSE).
 - Added clipboard support for Windows (`Set-Clipboard`) and macOS (`pbcopy`)
 - Corrupted config files are backed up to `.toml.bak` before recreating defaults
 
----
-
 ### v1.3.3 (2026-03-05)
 
 **Bug Fixes**
 - Disabled media key listener on macOS — pynput can't intercept keys, causing previous track to open iTunes. Media keys on macOS will be implemented properly with MPRemoteCommandCenter in a future release.
 - Suppressed noisy warnings on macOS startup ("dbus-next not installed", "process not trusted")
 
----
-
 ### v1.3.1 (2026-03-05)
 
 **New**
 - Cross-platform media key support — play/pause, next, and previous media keys now work on macOS and Windows via `pynput` (Linux already supported via MPRIS)
 - Pillow (album art) is now a default dependency — no longer requires `pip install ytm-player[images]`
-
----
 
 ### v1.3.0 (2026-03-05)
 
@@ -618,6 +610,8 @@ MIT — see [LICENSE](LICENSE).
 - Fixed auth validation crashing with raw tracebacks on network errors — now shows friendly message with recovery suggestion (thanks @CarterSnich [#7](https://github.com/peternaame-boop/ytm-player/issues/7), @Tohbuu [#11](https://github.com/peternaame-boop/ytm-player/issues/11))
 - Rewrote auth validation to use `get_account_info()` instead of monkey-patching — more reliable across platforms and ytmusicapi versions
 - Unplayable tracks (no video ID) now auto-skip to the next track instead of stopping playback dead
+
+---
 
 ### v1.2.11 (2026-03-03)
 
@@ -693,6 +687,8 @@ MIT — see [LICENSE](LICENSE).
 **Removed**
 - Lyrics page — replaced entirely by the lyrics sidebar
 - Lyrics button from footer bar — use header bar toggle or `l` key instead
+
+---
 
 ### v1.1.3 (2026-02-14)
 
@@ -776,6 +772,8 @@ MIT — see [LICENSE](LICENSE).
 **Testing & CI**
 - GitHub Actions CI pipeline (ruff lint + pytest with coverage)
 - 231 tests covering queue, IPC, stream resolver, cache, history, auth, downloads, Discord RPC, Last.fm, and settings
+
+---
 
 ### v1.0.0 (2026-02-07)
 
