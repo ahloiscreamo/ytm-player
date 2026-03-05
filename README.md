@@ -542,11 +542,12 @@ MIT — see [LICENSE](LICENSE).
 
 ## Changelog
 
-### v1.3.5 (2026-03-05)
+### v1.3.6 (2026-03-05)
 
 **Windows Fix**
-- Fixed mpv DLL not found on Windows when installed via scoop/chocolatey — python-mpv couldn't find `libmpv-2.dll` because package managers put the DLL in an app directory, not on PATH. ytm-player now auto-locates the DLL directory before import.
-- Improved error message when mpv library is genuinely missing on Windows
+- Fixed mpv crash inside Textual TUI on Windows — locale was being set via the legacy `msvcrt.dll` CRT, but Python 3.12+ uses `ucrtbase.dll`, so the `setlocale(LC_NUMERIC, "C")` call had no effect and mpv refused to initialize (access violation on null handle)
+- Fixed mpv DLL not found on Windows when installed via scoop/chocolatey — auto-locates `libmpv-2.dll` in common install directories
+- Improved error messages for service init failures
 
 ---
 
