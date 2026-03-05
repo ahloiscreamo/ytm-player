@@ -177,18 +177,18 @@ class HistoryManager:
         listened_seconds: int,
         source: str,
     ) -> None:
-        """Record a track play event.
-
-        Skips are ignored: the play is only logged when *listened_seconds*
-        exceeds the minimum threshold.
-        """
+        """Record a track play event."""
         if listened_seconds <= _MIN_LISTEN_SECONDS:
             return
 
         if self._db is None:
             raise RuntimeError("Database not initialized")
 
-        video_id = track["video_id"]
+        # FIX: Use .get() and check for existence
+        video_id = track.get("video_id")
+        if not video_id:
+            return
+
         title = track.get("title", "")
         artist = track.get("artist", "")
         album = track.get("album", "")
