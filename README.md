@@ -396,21 +396,22 @@ username = ""
 ### Example `theme.toml`
 
 ```toml
-[colors]
-background = "#0f0f0f"
-foreground = "#ffffff"
-primary = "#ff0000"
-secondary = "#aaaaaa"
-accent = "#ff4e45"
-success = "#2ecc71"
-warning = "#f39c12"
-error = "#e74c3c"
-muted_text = "#999999"
-border = "#333333"
-selected_item = "#2a2a2a"
-progress_filled = "#ff0000"
-progress_empty = "#555555"
-playback_bar_bg = "#1a1a1a"
+background = "#232136"
+foreground = "#c8c8e5"
+primary = "#eb6f92"
+secondary = "#31748f"
+accent = "#c4a7e7"
+success = "#3e8fb0"
+warning = "#f6c177"
+error = "#eb6f92"
+muted_text = "#6e6a86"
+border = "#393552"
+selected_item = "#eb6f92"
+progress_filled = "#f6c177"
+progress_empty = "#393552"
+playback_bar_bg = "#2a273f"
+surface = "#2a273f"
+text = "#c8c8e5"
 ```
 
 ## Spotify Import
