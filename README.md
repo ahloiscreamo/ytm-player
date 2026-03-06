@@ -2,7 +2,8 @@
 
 A full-featured YouTube Music player for the terminal. Browse your library, search, queue tracks, and control playback — all from a TUI with vim-style keybindings. Runs on Linux, macOS, and Windows.
 
-![ytm-player screenshot](https://raw.githubusercontent.com/peternaame-boop/ytm-player/master/screenshot-v4.png)
+<img width="1920" height="1080" alt="Screenshot from 2026-03-06 16-56-17" src="https://github.com/user-attachments/assets/24ea1527-12e5-4407-a998-25af95dc829a" />
+
 
 ## Features
 
