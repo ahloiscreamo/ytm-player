@@ -229,15 +229,20 @@ ytm-player automatically searches common install locations (scoop, chocolatey, P
 ### 3. Authenticate
 
 ```bash
-ytm setup          # Linux / macOS
-py -m ytm_player setup   # Windows
+ytm setup                    # Auto-detect browser cookies
+ytm setup --browser firefox  # Target a specific browser
+ytm setup --manual           # Skip detection, paste headers directly
 ```
 
-The setup wizard has two modes:
+Windows: replace `ytm` with `py -m ytm_player`.
 
-**Automatic (preferred):** If `[yt_dlp].cookies_file` is set, setup first tries that Netscape cookies file (same format as `yt-dlp --cookies FILE`). If not configured or invalid, it scans installed browsers (Helium, Chrome, Chromium, Brave, Firefox, Edge, Vivaldi, Opera) for YouTube Music cookies.
+The setup wizard has three modes:
 
-**Manual fallback:** If cookie-file + auto-detection fail (e.g. expired cookies, unsupported browser), the wizard walks you through pasting raw request headers:
+**Automatic (default):** If `[yt_dlp].cookies_file` is set, setup first tries that Netscape cookies file (same format as `yt-dlp --cookies FILE`). If not configured or invalid, it scans installed browsers (Helium, Chrome, Chromium, Brave, Firefox, Edge, Vivaldi, Opera) for YouTube Music cookies.
+
+**Browser-specific (`--browser <name>`):** Extract cookies from a specific browser — useful when auto-detect picks the wrong one. Supports: `chrome`, `firefox`, `brave`, `edge`, `chromium`, `vivaldi`, `opera`.
+
+**Manual (`--manual`):** Skip all browser detection and paste raw request headers directly:
 
 1. Open [music.youtube.com](https://music.youtube.com) in your browser
 2. Open DevTools (F12) → Network tab
