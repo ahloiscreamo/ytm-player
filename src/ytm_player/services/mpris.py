@@ -1,6 +1,7 @@
-"""mpris stuff for linux media keys.
+"""MPRIS D-Bus integration for Linux media key support.
 
-this lets your desktop control the player via the session bus.
+Exposes ytm-player on the session bus so desktop environments and media key
+daemons can control playback.
 """
 
 from __future__ import annotations
@@ -23,12 +24,12 @@ except (ImportError, ValueError):
 BUS_NAME = "org.mpris.MediaPlayer2.ytm_player"
 OBJECT_PATH = "/org/mpris/MediaPlayer2"
 
-# shortcut for the player's async callbacks
+# Type alias for the async callback functions the player provides.
 PlayerCallback = Callable[..., Coroutine[Any, Any, None]]
 
 
 def _empty_metadata() -> dict[str, Variant]:
-    """just an empty metadata dict to start with"""
+    """Return a default/empty MPRIS metadata dict."""
     return {
         "mpris:trackid": Variant("o", "/org/mpris/MediaPlayer2/TrackList/NoTrack"),
         "xesam:title": Variant("s", ""),
@@ -43,10 +44,12 @@ try:
     if not _DBUS_AVAILABLE:
         raise ImportError("dbus-next not available")
 
-    # --- the main mpris interface ---
+    # ------------------------------------------------------------------ #
+    #  org.mpris.MediaPlayer2  (root interface)
+    # ------------------------------------------------------------------ #
 
     class _MediaPlayer2Interface(ServiceInterface):
-        """tells the system who we are"""
+        """Basic MPRIS identity interface."""
 
         def __init__(self, callbacks: dict[str, PlayerCallback]) -> None:
             super().__init__("org.mpris.MediaPlayer2")
@@ -88,13 +91,14 @@ try:
 
         @method()
         async def Raise(self):  # noqa: N802
-            # we're a tui, so we can't really "raise" a window
-            pass
+            pass  # TUI cannot raise a window.
 
-    # --- the player interface ---
+    # ------------------------------------------------------------------ #
+    #  org.mpris.MediaPlayer2.Player
+    # ------------------------------------------------------------------ #
 
     class _PlayerInterface(ServiceInterface):
-        """this part handles the actual playback controls"""
+        """MPRIS Player interface for playback control."""
 
         def __init__(self, callbacks: dict[str, PlayerCallback]) -> None:
             super().__init__("org.mpris.MediaPlayer2.Player")
@@ -104,7 +108,7 @@ try:
             self._volume = 0.8
             self._position_us: int = 0
 
-        # properties
+        # --- Properties ------------------------------------------------
 
         @dbus_property(access=PropertyAccess.READ)
         def PlaybackStatus(self) -> "s":  # type: ignore[override]
@@ -162,7 +166,7 @@ try:
         def CanControl(self) -> "b":  # type: ignore[override]
             return True
 
-        # methods
+        # --- Methods ---------------------------------------------------
 
         @method()
         async def Play(self):  # noqa: N802
@@ -212,13 +216,13 @@ try:
             if cb:
                 await cb(position)
 
-        # signals
+        # --- Signals ---------------------------------------------------
 
         @signal()
         def Seeked(self) -> "x":
             return self._position_us
 
-        # internal helpers to update state
+        # --- Internal helpers for state updates ------------------------
 
         def set_metadata(
             self,
@@ -253,7 +257,7 @@ except (ImportError, ValueError):
 
 
 class MPRISService:
-    """manages the mpris connection"""
+    """Manages the MPRIS D-Bus presence for ytm-player."""
 
     def __init__(self) -> None:
         self._bus: MessageBus | None = None
@@ -261,10 +265,17 @@ class MPRISService:
         self._player_iface: _PlayerInterface | None = None
         self._running = False
 
-    # lifecycle
+    # ------------------------------------------------------------------
+    # Lifecycle
+    # ------------------------------------------------------------------
 
     async def start(self, player_callbacks: dict[str, PlayerCallback]) -> None:
-        """start mpris and connect to the bus"""
+        """Connect to the session bus and export the MPRIS interfaces.
+
+        *player_callbacks* maps action names to async functions the player
+        exposes (play, pause, play_pause, next, previous, stop, seek,
+        set_position, quit).
+        """
         if not _DBUS_AVAILABLE:
             logger.debug("dbus-next is not installed — MPRIS disabled")
             return
@@ -288,14 +299,16 @@ class MPRISService:
         logger.info("MPRIS service registered as %s", BUS_NAME)
 
     async def stop(self) -> None:
-        """stop mpris and disconnect"""
+        """Disconnect from D-Bus."""
         if self._bus is not None:
             self._bus.disconnect()
             self._bus = None
         self._running = False
         logger.info("MPRIS service stopped")
 
-    # updating the state
+    # ------------------------------------------------------------------
+    # State updates (called by the player engine)
+    # ------------------------------------------------------------------
 
     async def update_metadata(
         self,
@@ -305,33 +318,18 @@ class MPRISService:
         art_url: str,
         length_us: int,
     ) -> None:
-        """tell the system about the new track"""
+        """Push new track metadata to D-Bus listeners."""
         if not self._running or self._player_iface is None:
             return
 
-        # make sure album is a string
-        if isinstance(album, dict):
-            album = album.get("name", "")
-        else:
-            album = str(album or "")
-
-        # make sure artist is a string
-        if isinstance(artist, list):
-            artist = ", ".join([a.get("name", str(a)) if isinstance(a, dict) else str(a) for a in artist])
-        elif isinstance(artist, dict):
-            artist = artist.get("name", "")
-        else:
-            artist = str(artist or "")
-
-        # send the clean strings to the interface
-        self._player_iface.set_metadata(str(title or ""), artist, album, art_url, length_us)
+        self._player_iface.set_metadata(title, artist, album, art_url, length_us)
         self._emit_properties_changed(
             "org.mpris.MediaPlayer2.Player",
             {"Metadata": self._player_iface._metadata},
         )
 
     async def update_playback_status(self, status: str) -> None:
-        """update the play/pause status"""
+        """Update Playing / Paused / Stopped status on D-Bus."""
         if not self._running or self._player_iface is None:
             return
 
@@ -342,20 +340,27 @@ class MPRISService:
         )
 
     def update_position(self, position_us: int) -> None:
-        """update the seek position"""
+        """Update the current playback position (microseconds)."""
         if not self._running or self._player_iface is None:
             return
 
         self._player_iface.set_position(position_us)
 
-    # internal helpers
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
 
     def _emit_properties_changed(
         self,
         interface_name: str,
         changed: dict[str, Any],
     ) -> None:
-        """tell the bus that properties changed"""
+        """Emit org.freedesktop.DBus.Properties.PropertiesChanged.
+
+        *changed* maps property names to their **raw Python values** (not
+        Variant-wrapped) — dbus-next's ``emit_properties_changed`` handles
+        the Variant wrapping internally.
+        """
         if self._player_iface is None:
             return
 
