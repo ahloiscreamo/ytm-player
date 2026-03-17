@@ -13,3 +13,9 @@ htmlcov/
 PRD.md
 .claude/
 uv.lock
+
+# AUR Build Artifacts
+aur/src/
+aur/pkg/
+aur/ytm-player/
+aur/*.pkg.tar.zst
