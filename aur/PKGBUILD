@@ -1,8 +1,9 @@
 # Maintainer: Peter <your@email.com>
+# Modified for local build: /home/ahloi/Scripts/ytm-player
 pkgname=ytm-player-git
-pkgver=1.2.11.r0.g6b20a58
+pkgver=1.5.2.r5.g11840ce
 pkgrel=1
-pkgdesc="A full-featured YouTube Music TUI client with vim-style navigation"
+pkgdesc="A full-featured YouTube Music TUI client - Rosé Pine Moon Edition"
 arch=('any')
 url="https://github.com/peternaame-boop/ytm-player"
 license=('MIT')
@@ -28,22 +29,24 @@ optdepends=(
 )
 provides=('ytm-player')
 conflicts=('ytm-player')
-source=("git+${url}.git")
+
+# This points to the parent directory (/home/ahloi/Scripts/ytm-player)
+source=("ytm-player::git+file:///home/ahloi/Scripts/ytm-player")
 sha256sums=('SKIP')
 
 pkgver() {
-    cd ytm-player
+    cd "$srcdir/ytm-player"
     git describe --long --tags 2>/dev/null | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g' ||
     printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
 
 build() {
-    cd ytm-player
+    cd "$srcdir/ytm-player"
     python -m build --wheel --no-isolation
 }
 
 package() {
-    cd ytm-player
+    cd "$srcdir/ytm-player"
     python -m installer --destdir="$pkgdir" dist/*.whl
     install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }
